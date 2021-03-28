@@ -8,6 +8,7 @@
   },
   "scripts": {
     "compile": "npx hardhat compile",
+    "hardhat": "hardhat",
     "test": "npx hardhat test",
     "coverage": "npx hardhat coverage | coveralls"
   },

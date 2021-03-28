@@ -25,7 +25,7 @@ contract('UBI.sol', accounts => {
         mockProofOfHumanity.mock.isRegistered
           .withArgs(submissionID)
           .returns(isRegistered);
-      setPost = (content) => 
+      setPost = (content) =>
         mockPoster.mock.post
           .withArgs(content)
           .returns();
@@ -44,6 +44,7 @@ contract('UBI.sol', accounts => {
 
       altProofOfHumanity = await waffle.deployMockContract(accounts[0], require("../artifacts/contracts/UBI.sol/IProofOfHumanity.json").abi);
       altPoster = mockAddress;
+      await ubi.setPoster(altPoster);
     });
 
     it("happy path - return a value previously initialized.", async () => {
@@ -129,7 +130,7 @@ contract('UBI.sol', accounts => {
         .to.emit(ubi, "Transfer")
       expect(await ubi.balanceOf(owner.address)).to.be.at.least(3000);
     });
-  
+
     it("require fail - The submission is still registered in Proof Of Humanity.", async () => {
       // Make sure it reverts if the submission is still registered.
       await setSubmissionIsRegistered(addresses[6], true);
@@ -169,7 +170,7 @@ contract('UBI.sol', accounts => {
     it("happy path - allow to burn and post.", async () => {
       await setPost('hello world');
       const previousBalance = new BigNumber((await ubi.balanceOf(addresses[0])).toString()).toNumber();
-      await ubi.burnAndPost('10000000000000', altPoster, 'hello world');
+      await ubi.burnAndPost('10000000000000', 'hello world');
       const newBalance = new BigNumber((await ubi.balanceOf(addresses[0])).toString()).toNumber();
       expect(newBalance).to.lessThan(previousBalance);
     });

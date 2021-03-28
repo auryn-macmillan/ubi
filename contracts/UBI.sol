@@ -93,6 +93,9 @@ contract UBI is Initializable {
   /// @dev Timestamp since human started accruing.
   mapping(address => uint256) public accruedSince;
 
+  /// @dev Poster contract.
+  IPoster public poster;
+
   /* Modifiers */
 
   /// @dev Verifies that the sender has ability to modify governed parameters.
@@ -249,13 +252,18 @@ contract UBI is Initializable {
 
   /** @dev Burns `_amount` of tokens and posts content in a Poser contract.
   *  @param _amount The quantity of tokens to burn in base units.
-  *  @param _poster the address of the poster contract.
   *  @param content bit of strings to signal.
   */
-  function burnAndPost(uint256 _amount, address _poster, string memory content) public {
+  function burnAndPost(uint256 _amount, string memory content) public {
     burn(_amount);
-    IPoster poster = IPoster(_poster);
     address(poster).delegatecall(abi.encodeWithSignature("post", content));
+  }
+
+  /** @dev Sets the address of the Poster contract.
+  *   @param _poster address of the poster contract
+  */
+  function setPoster(address _poster) external onlyByGovernor {
+    poster = IPoster(_poster);
   }
 
   /** @dev Burns `_amount` of tokens from `_account` and withdraws accrued tokens.
