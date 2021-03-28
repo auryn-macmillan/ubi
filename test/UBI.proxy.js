@@ -1,3 +1,4 @@
+const { default: BigNumber } = require("bignumber.js");
 const { expect } = require("chai");
 const deploymentParams = require('../deployment-params');
 
@@ -9,18 +10,27 @@ contract('UBI.sol', accounts => {
     before(async () => {
       accounts = await ethers.getSigners();
 
-      const [_addresses, mockProofOfHumanity] = await Promise.all([
+      const [_addresses, mockProofOfHumanity, mockPoster] = await Promise.all([
         Promise.all(accounts.map((account) => account.getAddress())),
         waffle.deployMockContract(
           accounts[0],
           require("../artifacts/contracts/UBI.sol/IProofOfHumanity.json").abi
         ),
+        waffle.deployMockContract(
+          accounts[9],
+          require("../artifacts/contracts/UBI.sol/IPoster.json").abi
+        ),
       ]);
-      addresses = _addresses;
       setSubmissionIsRegistered = (submissionID, isRegistered) =>
         mockProofOfHumanity.mock.isRegistered
           .withArgs(submissionID)
           .returns(isRegistered);
+      setPost = (content) => 
+        mockPoster.mock.post
+          .withArgs(content)
+          .returns();
+
+      addresses = _addresses;
 
       UBICoin = await ethers.getContractFactory("UBI");
 
@@ -29,9 +39,11 @@ contract('UBI.sol', accounts => {
         { initializer: 'initialize', unsafeAllowCustomTypes: true }
       );
 
+      const mockAddress = mockPoster.address;
       await ubi.deployed();
 
       altProofOfHumanity = await waffle.deployMockContract(accounts[0], require("../artifacts/contracts/UBI.sol/IProofOfHumanity.json").abi);
+      altPoster = mockAddress;
     });
 
     it("happy path - return a value previously initialized.", async () => {
@@ -152,6 +164,14 @@ contract('UBI.sol', accounts => {
       await ubi.changeProofOfHumanity(altProofOfHumanity.address);
       expect(await ubi.proofOfHumanity()).to.equal(altProofOfHumanity.address);
       expect(await ubi.proofOfHumanity()).to.not.equal(originalProofOfHumanity);
+    });
+
+    it("happy path - allow to burn and post.", async () => {
+      await setPost('hello world');
+      const previousBalance = new BigNumber((await ubi.balanceOf(addresses[0])).toString()).toNumber();
+      await ubi.burnAndPost('10000000000000', altPoster, 'hello world');
+      const newBalance = new BigNumber((await ubi.balanceOf(addresses[0])).toString()).toNumber();
+      expect(newBalance).to.lessThan(previousBalance);
     });
 
   });
