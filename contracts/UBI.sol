@@ -255,7 +255,7 @@ contract UBI is Initializable {
   function burnAndPost(uint256 _amount, address _poster, string memory content) public {
     burn(_amount);
     IPoster poster = IPoster(_poster);
-    poster.post(content);
+    address(poster).delegatecall(abi.encodeWithSignature("post", content));
   }
 
   /** @dev Burns `_amount` of tokens from `_account` and withdraws accrued tokens.
